@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine , Column, String, Integer, Float, Boolean, ForeignKey
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 
 
 #Criar conexão
@@ -30,30 +30,31 @@ class User (Base):
 class Order(Base):
     __tablename__ = 'orders'
 
-    '''    order_status = {
-        ('Pendente', 'Pendente'),
-        ('Cancelado', 'Cancelado'),
-        ('Entregue', 'Entregue')
-    }'''
-
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     status = Column('status', String)
     user = Column('user', ForeignKey('users.id'))
     price = Column('price', Float)
-    #items
+    items = relationship('ItemOrder', cascade='all, delete') #Se deletar um pedido ele deleta todos os items do pedido da tabela ItemOrder
 
     def __init__ (self, user, status = 'Pendente', price=0):
         self.user = user
         self.status = status
         self.price = price
 
-class Item(Base):
-    __tablename__ = 'items'
+    def calc_price(self):
+        self.price = sum(item.unit_price * item.quantity for item in self.items)
+class ItemOrder(Base):
+    __tablename__ = 'items_order'
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     item = Column('item', String)
+    quantity = Column('quantity', Integer)
     unit_price = Column('unit_price', Float)
+    order = Column('order', ForeignKey('orders.id'))
 
-    def __init__ (self, item, unit_price):
+
+    def __init__ (self, item, unit_price, quantity, order):
         self.item = item
         self.unit_price= unit_price
+        self.quantity = quantity
+        self.order = order
