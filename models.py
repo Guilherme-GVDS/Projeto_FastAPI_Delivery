@@ -34,7 +34,7 @@ class Order(Base):
     status = Column('status', String)
     user = Column('user', ForeignKey('users.id'))
     price = Column('price', Float)
-    items = relationship('ItemOrder', cascade='all, delete')
+    items = relationship('ItemOrder', cascade='all, delete') #Se deletar um pedido ele deleta todos os items do pedido da tabela ItemOrder
 
     def __init__ (self, user, status = 'Pendente', price=0):
         self.user = user
@@ -43,7 +43,6 @@ class Order(Base):
 
     def calc_price(self):
         self.price = sum(item.unit_price * item.quantity for item in self.items)
-
 class ItemOrder(Base):
     __tablename__ = 'items_order'
 

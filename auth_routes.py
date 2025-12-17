@@ -17,6 +17,8 @@ def create_token(id_user, token_duration = timedelta(minutes=ACCESS_TOKEN_EXPIRE
     encoded_jwt = jwt.encode(dic_info, SECRET_KEY, ALGORITHM)
     return encoded_jwt
 
+
+
 def authenticate_user (email, password, session):
     usuario = session.query(User).filter(User.email==email).first()
     if not usuario:
@@ -24,6 +26,7 @@ def authenticate_user (email, password, session):
     elif not bcrypt_context.verify(password, usuario.password):
         return False
     return usuario
+
 
 @auth_router.get('/')
 async def home():
@@ -34,22 +37,14 @@ async def home():
 
 @auth_router.post('/create_user')
 async def create_user(user_schema: UserSchema, 
-                      session: Session = Depends(get_session),
-                      user_adm: User = Depends(verify_token)):
+                      session: Session = Depends(get_session)):
     user = session.query(User).filter(User.email==user_schema.email).first()
     if user:
         raise HTTPException (status_code=400, detail='E-mail já cadastrado')
-    elif user_adm.admin:
-        password_cript = bcrypt_context.hash(user_schema.password)
-        new_user = User(user_schema.name, user_schema.phone_number, user_schema.email, 
-                        password_cript, user_schema.admin)
-        session.add(new_user)
-        session.commit() 
-        return {'mensagem': f'usuário cadastrado {user_schema.email}'}
     else:
         password_cript = bcrypt_context.hash(user_schema.password)
         new_user = User(user_schema.name, user_schema.phone_number, user_schema.email, 
-                        password_cript)
+                        password_cript, user_schema.admin)
         session.add(new_user)
         session.commit() 
         return {'mensagem': f'usuário cadastrado {user_schema.email}'}
