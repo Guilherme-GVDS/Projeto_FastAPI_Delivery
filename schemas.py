@@ -6,6 +6,15 @@ class UserSchema(BaseModel):
     phone_number: str
     email: str
     password: str
+    
+    class Config:
+        from_attributes = True
+
+class UserAdmSchema(BaseModel):
+    name: str
+    phone_number: str
+    email: str
+    password: str
     admin: Optional[bool]
     
     class Config:

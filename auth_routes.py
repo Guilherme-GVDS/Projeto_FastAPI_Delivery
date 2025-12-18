@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from models import User
 from dependencies import get_session, verify_token
 from main import bcrypt_context, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
-from schemas import UserSchema, LoginSchema
+from schemas import UserSchema, LoginSchema, UserAdmSchema
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
@@ -39,15 +39,34 @@ async def home():
 async def create_user(user_schema: UserSchema, 
                       session: Session = Depends(get_session)):
     user = session.query(User).filter(User.email==user_schema.email).first()
+
     if user:
         raise HTTPException (status_code=400, detail='E-mail já cadastrado')
     else:
         password_cript = bcrypt_context.hash(user_schema.password)
         new_user = User(user_schema.name, user_schema.phone_number, user_schema.email, 
-                        password_cript, user_schema.admin)
+                        password_cript)
         session.add(new_user)
         session.commit() 
         return {'mensagem': f'usuário cadastrado {user_schema.email}'}
+    
+@auth_router.post('/create_adm_user')
+async def create_adm_user(user_adm_schema: UserAdmSchema, 
+                      session: Session = Depends(get_session),
+                      user_adm: User = Depends(verify_token)):
+    user = session.query(User).filter(User.email==user_adm_schema.email).first()
+
+    if user:
+        raise HTTPException (status_code=400, detail='E-mail já cadastrado')
+    elif user_adm_schema.admin and not user_adm.admin:
+        raise HTTPException (status_code=401, detail='Você não tem autorização para fazer essa modificação')
+    else:    
+        password_cript = bcrypt_context.hash(user_adm_schema.password)
+        new_user = User(user_adm_schema.name, user_adm_schema.phone_number, user_adm_schema.email, 
+                        password_cript, user_adm_schema.admin)
+        session.add(new_user)
+        session.commit() 
+        return {'mensagem': f'usuário cadastrado {user_adm_schema.email}'}
     
 @auth_router.post('/login')
 async def login (login_schema: LoginSchema, session: Session = Depends(get_session)):
